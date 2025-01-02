@@ -1,9 +1,23 @@
 # Exclude specific folders
-/poky/build/cache/
-/poky/build/downloads/
-/poky/build/sstate-cache/
-/poky/build/tmp/
-/poky/build/tmp-glibc/
+#/poky/build/cache/
+#/poky/build/downloads/
+#/poky/build/sstate-cache/
+#/poky/build/tmp/
+#/poky/build/tmp-glibc/
+
+
+
+# Ignore everything in poky
+poky/*
+
+# Do not ignore the build folder
+!poky/build/
+
+# Ignore everything in build
+poky/build/*
+
+# Do not ignore the conf folder
+!poky/build/conf/
 
 
 meta-clang/
@@ -11,5 +25,4 @@ meta-intel/
 meta-nvidia/
 meta-openembedded/
 meta-virtualization/
-poky/
 
