@@ -1,0 +1,100 @@
+SUMMARY = "NVIDIA proprietary driver"
+DESCRIPTION = "NVIDIA Linux x86_64 driver version 550.135"
+LICENSE = "CLOSED"
+LIC_FILES_CHKSUM = "file://EULA.txt;md5=cb0e47ada0f0449372d730bff8036853"
+
+inherit systemd
+
+# Assume the runfile is placed in the same layer in a files/ directory:
+# meta-nvidia/recipes-graphics/nvidia-driver/files/NVIDIA-Linux-x86_64-550.135.run
+SRC_URI = "file://NVIDIA-Linux-x86_64-550.135.run \
+           file://EULA.txt"
+
+# The NVIDIA runfile often needs tools like 'bash' to run
+DEPENDS = "bash"
+
+# This is a binary driver, so set appropriate COMPATIBLE_HOST:
+COMPATIBLE_HOST = "(x86_64|amd64).*-linux"
+
+S = "${WORKDIR}"
+
+# No standard compilation. We will extract and then install.
+# Disable strip to avoid issues with proprietary binaries
+INHIBIT_PACKAGE_STRIP = "1"
+INHIBIT_SYSROOT_STRIP = "1"
+
+do_unpack() {
+    # The run file can self-extract with -x
+    chmod +x ${WORKDIR}/NVIDIA-Linux-x86_64-550.135.run
+    ${WORKDIR}/NVIDIA-Linux-x86_64-550.135.run -x
+}
+
+do_compile() {
+    # If the driver provides pre-compiled kernel modules compatible with your kernel,
+    # you might only need to copy them. Otherwise, you might have to run:
+    # ${S}/nvidia-installer --kernel-name=$(uname -r) ...
+    #
+    # Some versions of NVIDIA installers let you build modules here:
+    # (Check the extracted README or instructions.)
+    #
+    # If building from source or linking with a kernel, ensure you have the kernel sources:
+    # KERNEL_SRC = "${STAGING_KERNEL_DIR}"
+    # make ...
+    :
+}
+
+do_install() {
+    # After extracting, the run file places extracted content in a directory like:
+    # ${WORKDIR}/NVIDIA-Linux-x86_64-550.135
+    # Inspect that directory and place files accordingly.
+
+    # Example structure (this will differ depending on the driver version):
+    # libGL.so*, libnvidia-*.so* usually go to /usr/lib(64)/
+    # binary utilities like nvidia-smi, nvidia-settings -> /usr/bin/
+    # kernel modules: nvidia.ko -> /lib/modules/${KERNEL_VERSION}/extra/
+
+    # Copy libraries:
+    install -d ${D}/usr/lib64
+    cp -a ${S}/NVIDIA-Linux-x86_64-550.135/lib*so* ${D}/usr/lib64/
+
+    # Copy binaries:
+    install -d ${D}/usr/bin
+    cp -a ${S}/NVIDIA-Linux-x86_64-550.135/nvidia-smi ${D}/usr/bin/
+    cp -a ${S}/NVIDIA-Linux-x86_64-550.135/nvidia-settings ${D}/usr/bin/
+
+    # Kernel modules (adjust KERNEL_VERSION and paths as needed):
+    # You need to know your kernel version used in the image.
+    # For example: KERNEL_VERSION="5.10.72"
+    install -d ${D}/lib/modules/${KERNEL_VERSION}/extra
+    cp -a ${S}/NVIDIA-Linux-x86_64-550.135/kernel/nvidia.ko ${D}/lib/modules/${KERNEL_VERSION}/extra/
+
+    # Other files, configs, etc. as needed...
+}
+
+FILES_${PN} += "\
+    /usr/lib64/* \
+    /usr/bin/* \
+    /lib/modules/${KERNEL_VERSION}/extra/*.ko \
+"
+
+# Ensure that the modules get dependencies processed
+RDEPENDS_${PN} = "depmod"
+
+# Post install script to handle module dependencies, etc.
+pkg_postinst_${PN} () {
+    if [ -n "$D" ]; then
+        # Running on host at build time, just return
+        exit 1
+    fi
+    depmod -a ${KERNEL_VERSION}
+}
+
+# Some NVIDIA drivers require additional configuration steps:
+# For example, updating the xorg.conf or running ldconfig:
+pkg_postinst_${PN} () {
+    if [ -z "$D" ]; then
+        ldconfig
+    fi
+}
+
+

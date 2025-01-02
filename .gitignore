@@ -1,0 +1,15 @@
+# Exclude specific folders
+/poky/build/cache/
+/poky/build/downloads/
+/poky/build/sstate-cache/
+/poky/build/tmp/
+/poky/build/tmp-glibc/
+
+
+meta-clang/
+meta-intel/
+meta-nvidia/
+meta-openembedded/
+meta-virtualization/
+poky/
+

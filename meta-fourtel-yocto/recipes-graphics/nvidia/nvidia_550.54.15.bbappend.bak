@@ -1,0 +1,16 @@
+# meta-nvidia/recipes-graphics/nvidia/nvidia_550.54.15.bbappend
+# Define PACKAGECONFIG options
+PACKAGECONFIG ??= ""
+
+# Define graphical features
+PACKAGECONFIG += "glx egl x11 wayland"
+
+# Define flags and dependencies for each feature
+PACKAGECONFIG[glx] = "--enable-glx,--disable-glx,mesa,libglvnd"
+PACKAGECONFIG[egl] = "--enable-egl,--disable-egl,mesa,libegl1"
+PACKAGECONFIG[x11] = "--enable-x11,--disable-x11,xorg", "xorg"
+PACKAGECONFIG[wayland] = "--enable-wayland,--disable-wayland,wayland"
+
+# Optionally, remove all graphical features by default
+PACKAGECONFIG:remove = "glx egl x11 wayland"
+
